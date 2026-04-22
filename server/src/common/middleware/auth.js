@@ -2,6 +2,17 @@ import authHelper from "../authHelper.js";
 import { User, LoginSession } from "../../../models/index.js";
 import { HttpStatus } from "../utils/errorException.js";
 
+const verificationAllowedPaths = new Set([
+    "/api/v1/auth/faceverify",
+    "/api/v1/auth/face-verify",
+    "/faceverify",
+    "/face-verify",
+    "/api/v1/auth/logout",
+    "/logout",
+    "/api/v1/auth/me",
+    "/me",
+]);
+
 export default async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -51,6 +62,13 @@ export default async (req, res, next) => {
                     success: false,
                     message: "Session expired. Please login again.",
                     errorCode: "SESSION_EXPIRED",
+                });
+            }
+            if (session.session_status === "pending_face_verification" && !verificationAllowedPaths.has(req.path)) {
+                return res.status(HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    message: "Face verification is required before you can continue.",
+                    errorCode: "FACE_VERIFICATION_REQUIRED",
                 });
             }
             await session.update({ last_seen_at: new Date() });

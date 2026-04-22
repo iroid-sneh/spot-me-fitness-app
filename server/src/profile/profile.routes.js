@@ -11,6 +11,7 @@ import updateLocationDto from "./dtos/updateLocationDtos.js";
 const router = express.Router();
 
 router.post("/setupcomplete", validator.body(setupCompleteDto), asyncWrap(profileController.setupComplete));
+router.post("/setup-complete", validator.body(setupCompleteDto), asyncWrap(profileController.setupComplete));
 router.get("/me", asyncWrap(profileController.myProfile));
 router.put("/me", validator.body(editProfileDto), asyncWrap(profileController.editProfile));
 router.put("/fitness", validator.body(editFitnessDto), asyncWrap(profileController.editFitness));

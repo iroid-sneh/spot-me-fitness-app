@@ -7,6 +7,7 @@ import {
     User,
     VerificationBadge,
 } from "../../models/index.js";
+import { Op } from "sequelize";
 import commonService from "../common/utils/common.service.js";
 import { detectFace } from "../common/utils/faceVerify.js";
 import { haversineKm } from "../common/helper.js";
@@ -49,6 +50,7 @@ class profileService {
         const hasMainPhoto = media.some((m) => m.is_main_photo);
         const fitnessOk = !!(
             fitness &&
+            Array.isArray(fitness.workout_types) && fitness.workout_types.length &&
             fitness.workout_frequency &&
             Array.isArray(fitness.fitness_goals) && fitness.fitness_goals.length &&
             Array.isArray(fitness.training_styles) && fitness.training_styles.length &&
@@ -73,22 +75,37 @@ class profileService {
     static async setupComplete(data, req, res) {
         try {
             const userId = req.user.userId;
-            const { fitness, lifestyle, media, fullName, heightCm, distancePrefKm, ...rest } = data;
+            const { fitness, lifestyle, mediaIds, mainPhotoMediaId, fullName, heightCm, distancePrefKm, ...rest } = data;
 
-            if (!media || media.length < PROFILE_MEDIA_MIN) {
+            if (!mediaIds || mediaIds.length < PROFILE_MEDIA_MIN) {
                 throw new UnprocessableEntityException(`At least ${PROFILE_MEDIA_MIN} media items are required`, "MEDIA_COUNT_LOW");
             }
-            if (media.length > PROFILE_MEDIA_MAX) {
+            if (mediaIds.length > PROFILE_MEDIA_MAX) {
                 throw new UnprocessableEntityException(`Maximum ${PROFILE_MEDIA_MAX} media items allowed`, "MEDIA_COUNT_HIGH");
             }
-            if (!media.some((m) => m.isFitness)) {
+            const uniqueMediaIds = [...new Set(mediaIds)];
+            if (uniqueMediaIds.length !== mediaIds.length) {
+                throw new UnprocessableEntityException("mediaIds must be unique", "MEDIA_IDS_DUPLICATE");
+            }
+
+            const existingMedia = await UserMedia.findAll({
+                where: {
+                    user_id: userId,
+                    id: { [Op.in]: uniqueMediaIds },
+                },
+                order: [["order_index", "ASC"]],
+            });
+            if (existingMedia.length !== uniqueMediaIds.length) {
+                throw new UnprocessableEntityException("One or more media items do not belong to you", "MEDIA_OWNERSHIP");
+            }
+            if (!existingMedia.some((m) => m.is_fitness)) {
                 throw new UnprocessableEntityException("At least one fitness photo or workout clip is required", "FITNESS_MEDIA_REQUIRED");
             }
-            const mainCount = media.filter((m) => m.isMainPhoto).length;
-            if (mainCount !== 1) {
-                throw new UnprocessableEntityException("Exactly one main profile photo must be set", "MAIN_PHOTO_REQUIRED");
+
+            const mainPhoto = existingMedia.find((m) => m.id === mainPhotoMediaId);
+            if (!mainPhoto) {
+                throw new UnprocessableEntityException("mainPhotoMediaId must belong to the selected media", "MAIN_PHOTO_REQUIRED");
             }
-            const mainPhoto = media.find((m) => m.isMainPhoto);
             if (mainPhoto.type !== "photo") {
                 throw new UnprocessableEntityException("Main profile photo must be a photo, not a video", "MAIN_PHOTO_INVALID_TYPE");
             }
@@ -123,33 +140,26 @@ class profileService {
                     await lifestyleRow.update(mapLifestylePayload(lifestyle), { transaction: t });
                 }
 
-                await UserMedia.destroy({ where: { user_id: userId }, transaction: t, force: true });
-
-                const createdMedia = await Promise.all(
-                    media.map((m, idx) =>
-                        UserMedia.create(
-                            {
-                                user_id: userId,
-                                url: m.url,
-                                type: m.type,
-                                duration_sec: m.durationSec || null,
-                                is_fitness: m.isFitness || false,
-                                is_main_photo: m.isMainPhoto || false,
-                                order_index: m.orderIndex || idx + 1,
-                                source: m.source || "camera_roll",
-                                mime_type: m.mimeType || null,
-                                size_bytes: m.sizeBytes || null,
-                                has_face: m.isMainPhoto ? true : null,
-                            },
-                            { transaction: t }
-                        )
-                    )
+                await UserMedia.update(
+                    { is_main_photo: false },
+                    { where: { user_id: userId }, transaction: t }
                 );
 
-                const main = createdMedia.find((m) => m.is_main_photo);
-                if (main) {
-                    await profile.update({ main_profile_photo_id: main.id }, { transaction: t });
+                for (const [idx, mediaId] of uniqueMediaIds.entries()) {
+                    await UserMedia.update(
+                        {
+                            order_index: idx + 1,
+                            is_main_photo: mediaId === mainPhotoMediaId,
+                            has_face: mediaId === mainPhotoMediaId ? true : undefined,
+                        },
+                        {
+                            where: { user_id: userId, id: mediaId },
+                            transaction: t,
+                        }
+                    );
                 }
+
+                await profile.update({ main_profile_photo_id: mainPhotoMediaId }, { transaction: t });
 
                 await VerificationBadge.findOrCreate({
                     where: { user_id: userId },

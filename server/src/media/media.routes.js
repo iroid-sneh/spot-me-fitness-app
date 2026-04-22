@@ -12,6 +12,7 @@ router.get("/", asyncWrap(mediaController.list));
 router.post("/upload", userMediaUpload.single("file"), asyncWrap(mediaController.upload));
 router.put("/reorder", validator.body(reorderMediaDto), asyncWrap(mediaController.reorder));
 router.put("/:id/setmain", asyncWrap(mediaController.setMain));
+router.put("/:id/set-main", asyncWrap(mediaController.setMain));
 router.put("/:id/markfitness", validator.body(markFitnessDto), asyncWrap(mediaController.markFitness));
 router.delete("/:id", asyncWrap(mediaController.remove));
 

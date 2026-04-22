@@ -10,7 +10,7 @@ const allowedVideoMimes = ["video/mp4", "video/quicktime", "video/x-m4v", "video
 const makeStorage = (subfolder) =>
     multer.diskStorage({
         destination: (req, file, cb) => {
-            const userId = req.user?.id || "anonymous";
+            const userId = req.user?.userId || "anonymous";
             const dir = path.join(process.cwd(), "uploads", subfolder, String(userId));
             fs.mkdirSync(dir, { recursive: true });
             cb(null, dir);

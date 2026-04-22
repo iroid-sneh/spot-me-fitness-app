@@ -16,12 +16,16 @@ const router = express.Router();
 
 router.post("/signup", signupLimiter, validator.body(signupDto), asyncWrap(authController.signup));
 router.post("/verifyotp", validator.body(verifyOtpDto), asyncWrap(authController.verifyOtp));
+router.post("/verify-email", validator.body(verifyOtpDto), asyncWrap(authController.verifyOtp));
 router.post("/login", loginLimiter, validator.body(loginDto), asyncWrap(authController.login));
 router.post("/forgotpassword", forgotPasswordLimiter, validator.body(forgotPasswordDto), asyncWrap(authController.forgotPassword));
+router.post("/forgot-password", forgotPasswordLimiter, validator.body(forgotPasswordDto), asyncWrap(authController.forgotPassword));
 router.post("/resetpassword", validator.body(resetPasswordDto), asyncWrap(authController.resetPassword));
+router.post("/reset-password", validator.body(resetPasswordDto), asyncWrap(authController.resetPassword));
 router.post("/resendotp", otpLimiter, validator.body(resendOtpDto), asyncWrap(authController.resendOtp));
 
 router.post("/faceverify", auth, validator.body(faceVerifyDto), asyncWrap(authController.faceVerify));
+router.post("/face-verify", auth, validator.body(faceVerifyDto), asyncWrap(authController.faceVerify));
 router.post("/logout", auth, asyncWrap(authController.logout));
 router.get("/me", auth, asyncWrap(authController.me));
 

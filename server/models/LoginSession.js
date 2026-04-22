@@ -38,6 +38,15 @@ const LoginSession = sequelize.define(
             type: DataTypes.DATE,
             allowNull: true,
         },
+        access_granted_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        session_status: {
+            type: DataTypes.STRING(30),
+            allowNull: false,
+            defaultValue: "active",
+        },
     },
     {
         tableName: "login_sessions",

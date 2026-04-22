@@ -1,4 +1,4 @@
-import { ProgressCapture } from "../../models/index.js";
+import { ProgressCapture, Profile } from "../../models/index.js";
 import commonService from "../common/utils/common.service.js";
 import {
     optimizeImage,
@@ -119,6 +119,8 @@ class progressService {
     static async listByUser(req, res) {
         try {
             const targetUserId = parseInt(req.params.userId, 10);
+            const profile = await commonService.findOne(Profile, { user_id: targetUserId, profile_status: "active" });
+            if (!profile) throw new NotFoundException("Profile not found", "PROFILE_NOT_FOUND");
             const list = await ProgressCapture.findAll({
                 where: { user_id: targetUserId },
                 order: [["created_at", "DESC"]],

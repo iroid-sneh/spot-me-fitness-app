@@ -14,6 +14,7 @@ import "./models/index.js";
 import swagger from "./src/common/config/swagger.js";
 import errorHandler from "./src/common/middleware/errorHandler.js";
 import auditLog from "./src/common/middleware/auditLog.js";
+import badgeService from "./src/progress/badge.service.js";
 import seedDatabase from "./seeder/index.js";
 import runChecklist from "./serverChecklist.js";
 
@@ -27,6 +28,12 @@ const port = process.env.PORT || 2003;
 
 dbConnection().then(() => {
     seedDatabase();
+    const badgeRefreshMs = 24 * 60 * 60 * 1000;
+    setInterval(() => {
+        badgeService.recomputeAllBadges().catch((error) => {
+            console.error("Badge refresh failed:", error.message);
+        });
+    }, badgeRefreshMs);
 });
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));

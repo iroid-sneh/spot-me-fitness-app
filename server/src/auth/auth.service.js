@@ -16,6 +16,15 @@ import {
 import getUserResources from "./resources/getUserResources.js";
 
 class authService {
+    static _requiresFaceVerification(user, deviceId, hasExistingDeviceSession) {
+        return (
+            user.account_status === "flagged" ||
+            user.face_verified_status === "pending" ||
+            user.face_verified_status === "failed" ||
+            (deviceId && !hasExistingDeviceSession)
+        );
+    }
+
     static async _createOtp(userId, email, type) {
         await commonService.updateMany(
             EmailOTP,
@@ -66,7 +75,14 @@ class authService {
 
     static async verifyOtp(data, req, res) {
         try {
-            const { email, otp, type } = data;
+            const emailVerificationPaths = new Set(["/verify-email", "/api/v1/auth/verify-email"]);
+            const resolvedType = data.type || (emailVerificationPaths.has(req.path) ? OTP_TYPE.REGISTRATION_OTP : null);
+            const { email, otp } = data;
+            const type = resolvedType;
+
+            if (!type) {
+                throw new BadRequestException("OTP type is required", "OTP_TYPE_REQUIRED");
+            }
 
             const user = await commonService.findOne(User, { email });
             if (!user) throw new NotFoundException("User not found", "USER_NOT_FOUND");
@@ -102,7 +118,10 @@ class authService {
             }
 
             if (type === OTP_TYPE.FORGOT_PASSWORD) {
-                await user.update({ is_forgot_password_verified: true });
+                await user.update({
+                    is_forgot_password_verified: true,
+                    forgot_password_verified_at: new Date(),
+                });
 
                 return res.status(200).json({
                     success: true,
@@ -151,10 +170,8 @@ class authService {
                 ? !!(await LoginSession.findOne({ where: { user_id: user.id, device_id: deviceId, revoked_at: null } }))
                 : false;
 
-            const requiresFaceVerify =
-                user.account_status === "flagged" ||
-                user.face_verified_status === "pending" ||
-                (deviceId && !hasExistingDeviceSession);
+            const requiresFaceVerify = authService._requiresFaceVerification(user, deviceId, hasExistingDeviceSession);
+            const sessionStatus = requiresFaceVerify ? "pending_face_verification" : "active";
 
             const tokens = await authHelper.tokensGenerator(user.id, { role: user.role });
 
@@ -165,6 +182,8 @@ class authService {
                 ip_address: req?.ip,
                 user_agent: req?.headers?.["user-agent"],
                 last_seen_at: new Date(),
+                access_granted_at: requiresFaceVerify ? null : new Date(),
+                session_status: sessionStatus,
             });
 
             await user.update({ last_login_at: new Date() });
@@ -178,6 +197,7 @@ class authService {
                     refreshToken: tokens.refreshToken,
                     expiresIn: tokens.expiresIn,
                     requiresFaceVerification: requiresFaceVerify,
+                    sessionStatus,
                     ...new getUserResources(user),
                 },
             });
@@ -197,7 +217,10 @@ class authService {
 
             const user = await commonService.findOne(User, { email });
             if (user) {
-                await user.update({ is_forgot_password_verified: false });
+                await user.update({
+                    is_forgot_password_verified: false,
+                    forgot_password_verified_at: null,
+                });
                 await authService._createOtp(user.id, email, OTP_TYPE.FORGOT_PASSWORD);
             }
 
@@ -227,17 +250,27 @@ class authService {
             const user = await commonService.findOne(User, { email });
             if (!user) throw new NotFoundException("User not found", "USER_NOT_FOUND");
 
-            if (!user.is_forgot_password_verified) {
+            if (!user.is_forgot_password_verified || !user.forgot_password_verified_at) {
                 throw new BadRequestException(
                     "Please verify the OTP before resetting your password.",
                     "FORGOT_PASSWORD_NOT_VERIFIED"
                 );
             }
 
+            const resetWindowStart = moment().subtract(OTP_EXPIRY_MINUTES, "minutes");
+            if (moment(user.forgot_password_verified_at).isBefore(resetWindowStart)) {
+                await user.update({
+                    is_forgot_password_verified: false,
+                    forgot_password_verified_at: null,
+                });
+                throw new BadRequestException("Password reset verification expired. Request a new OTP.", "RESET_WINDOW_EXPIRED");
+            }
+
             const hashedPassword = await authHelper.hashPassword(password);
             await user.update({
                 password_hash: hashedPassword,
                 is_forgot_password_verified: false,
+                forgot_password_verified_at: null,
             });
 
             await commonService.updateMany(
@@ -302,6 +335,16 @@ class authService {
             if (profile?.main_profile_photo_id) {
                 reference = await commonService.findById(UserMedia, profile.main_profile_photo_id);
             }
+            if (!reference?.url) {
+                throw new BadRequestException(
+                    "A valid main profile photo is required before face verification can run.",
+                    "FACE_REFERENCE_REQUIRED"
+                );
+            }
+
+            const session = req.user?.jti
+                ? await LoginSession.findOne({ where: { jti: req.user.jti, user_id: userId, revoked_at: null } })
+                : null;
 
             const recentFails = await commonService.count(FaceVerificationLog, {
                 user_id: userId,
@@ -325,7 +368,16 @@ class authService {
             });
 
             if (result.match) {
-                await user.update({ face_verified_status: "approved" });
+                await user.update({
+                    face_verified_status: "approved",
+                    account_status: user.account_status === "flagged" ? "active" : user.account_status,
+                });
+                if (session) {
+                    await session.update({
+                        session_status: "active",
+                        access_granted_at: new Date(),
+                    });
+                }
                 return res.status(200).json({
                     success: true,
                     message: "Face verification successful",

@@ -29,6 +29,10 @@ const User = sequelize.define(
             allowNull: false,
             defaultValue: false,
         },
+        forgot_password_verified_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
         face_verified_status: {
             type: DataTypes.STRING(20),
             allowNull: false,
