@@ -1,0 +1,1301 @@
+openapi: 3.0.0
+
+info:
+    title: Spot Me API
+    description: OpenAPI specification for the Spot Me Fitness Connection App
+    version: 1.0.0
+
+components:
+    securitySchemes:
+        bearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+
+    responses:
+        SignupResponse:
+            description: Signup successful, OTP sent
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success:
+                                type: boolean
+                                example: true
+                            message:
+                                type: string
+                                example: Signup successful. Please verify your email.
+                            data:
+                                type: object
+                                properties:
+                                    userId:
+                                        type: integer
+                                        example: 42
+                                    email:
+                                        type: string
+                                        example: john.doe@example.com
+
+        VerifyEmailResponse:
+            description: Email verified
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success:
+                                type: boolean
+                                example: true
+                            message:
+                                type: string
+                                example: Email verified successfully
+                            data:
+                                type: object
+                                properties:
+                                    email:
+                                        type: string
+                                        example: john.doe@example.com
+                                    isVerified:
+                                        type: boolean
+                                        example: true
+
+        LoginResponse:
+            description: Login successful
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success:
+                                type: boolean
+                                example: true
+                            message:
+                                type: string
+                                example: Login successful
+                            data:
+                                type: object
+                                properties:
+                                    tokenType:
+                                        type: string
+                                        example: Bearer
+                                    accessToken:
+                                        type: string
+                                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature
+                                    refreshToken:
+                                        type: string
+                                        example: 7f3a9c0e2b1d4f8a6c5b3e1a9d8f2c4b7e6a5d3c1b2e9a8f7d6c5b4a3e2d1c0b
+                                    expiresIn:
+                                        type: string
+                                        example: 365d
+                                    requiresFaceVerification:
+                                        type: boolean
+                                        example: false
+                                    id:
+                                        type: integer
+                                        example: 1
+                                    email:
+                                        type: string
+                                        example: john.doe@example.com
+                                    isVerified:
+                                        type: boolean
+                                        example: true
+                                    faceVerifiedStatus:
+                                        type: string
+                                        example: approved
+                                    accountStatus:
+                                        type: string
+                                        example: active
+                                    role:
+                                        type: string
+                                        example: user
+
+        ForgotPasswordResponse:
+            description: OTP sent (identical response whether or not email exists)
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success:
+                                type: boolean
+                                example: true
+                            message:
+                                type: string
+                                example: If an account exists, an OTP has been sent.
+                            data:
+                                type: object
+                                properties:
+                                    sent:
+                                        type: boolean
+                                        example: true
+
+        ResetPasswordResponse:
+            description: Password reset successful
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success:
+                                type: boolean
+                                example: true
+                            message:
+                                type: string
+                                example: Your new password is now active.
+                            data:
+                                type: object
+                                properties:
+                                    reset:
+                                        type: boolean
+                                        example: true
+
+        ResendOtpResponse:
+            description: OTP resent successfully
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success:
+                                type: boolean
+                                example: true
+                            message:
+                                type: string
+                                example: OTP sent
+                            data:
+                                type: object
+                                properties:
+                                    sent:
+                                        type: boolean
+                                        example: true
+
+        FaceVerifyResponse:
+            description: Face verification passed
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success:
+                                type: boolean
+                                example: true
+                            message:
+                                type: string
+                                example: Face verification successful
+                            data:
+                                type: object
+                                properties:
+                                    verified:
+                                        type: boolean
+                                        example: true
+                                    confidence:
+                                        type: number
+                                        example: 0.95
+
+        LogoutResponse:
+            description: Logged out
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success:
+                                type: boolean
+                                example: true
+                            message:
+                                type: string
+                                example: Logged out successfully
+                            data:
+                                type: object
+                                properties:
+                                    loggedOut:
+                                        type: boolean
+                                        example: true
+
+        MeResponse:
+            description: Current authenticated user
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success:
+                                type: boolean
+                                example: true
+                            message:
+                                type: string
+                                example: Success
+                            data:
+                                $ref: "#/components/schemas/User"
+
+        ProfileSetupCompleteResponse:
+            description: Profile activated
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success:
+                                type: boolean
+                                example: true
+                            message:
+                                type: string
+                                example: Profile setup complete
+                            data:
+                                type: object
+                                properties:
+                                    profileId:
+                                        type: integer
+                                        example: 1
+                                    activation:
+                                        type: object
+                                        properties:
+                                            status:
+                                                type: string
+                                                example: active
+                                            checks:
+                                                type: object
+                                                properties:
+                                                    hasEnoughMedia: { type: boolean, example: true }
+                                                    hasFitnessMedia: { type: boolean, example: true }
+                                                    hasMainPhoto: { type: boolean, example: true }
+                                                    fitnessOk: { type: boolean, example: true }
+                                                    profileOk: { type: boolean, example: true }
+                                                    mediaCount: { type: integer, example: 4 }
+
+        ProfileMeResponse:
+            description: Full profile of the authenticated user
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success:
+                                type: boolean
+                                example: true
+                            message:
+                                type: string
+                                example: Success
+                            data:
+                                $ref: "#/components/schemas/Profile"
+
+        ProfileUpdateResponse:
+            description: Profile updated
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success:
+                                type: boolean
+                                example: true
+                            message:
+                                type: string
+                                example: Profile updated
+                            data:
+                                type: object
+                                properties:
+                                    id: { type: integer, example: 1 }
+                                    fullName: { type: string, example: John D. }
+                                    bio: { type: string, example: Hybrid training — strength + conditioning. }
+                                    heightCm: { type: integer, example: 181 }
+                                    distancePrefKm: { type: integer, example: 40 }
+                                    profileStatus: { type: string, example: active }
+
+        FitnessUpdateResponse:
+            description: Fitness details updated
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Fitness details updated }
+                            data:
+                                type: object
+                                properties:
+                                    workoutFrequency: { type: string, example: 6x_per_week }
+                                    intent: { type: string, example: training_partner }
+                                    fitnessGoals:
+                                        type: array
+                                        items: { type: string }
+                                        example: [build_muscle, improve_endurance]
+                                    trainingStyles:
+                                        type: array
+                                        items: { type: string }
+                                        example: [powerlifting, hybrid_training]
+
+        LifestyleUpdateResponse:
+            description: Lifestyle updated
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Lifestyle updated }
+                            data:
+                                type: object
+                                properties:
+                                    smoking: { type: string, example: no }
+                                    drinking: { type: string, example: sometimes }
+                                    kids: { type: string, example: want }
+                                    language: { type: string, example: "English, Hindi" }
+                                    lookingFor: { type: string, example: A training partner and maybe more. }
+
+        LocationUpdateResponse:
+            description: Location updated
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Location updated }
+                            data:
+                                type: object
+                                properties:
+                                    updated: { type: boolean, example: true }
+
+        PublicProfileResponse:
+            description: Another user's public profile (active profiles only)
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Success }
+                            data:
+                                $ref: "#/components/schemas/Profile"
+
+        MediaListResponse:
+            description: List of my media
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Success }
+                            data:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/UserMedia"
+
+        MediaUploadResponse:
+            description: Media uploaded
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Media uploaded }
+                            data:
+                                $ref: "#/components/schemas/UserMedia"
+
+        MediaReorderResponse:
+            description: Media reordered
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Media reordered }
+                            data:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/UserMedia"
+
+        MediaSetMainResponse:
+            description: Main profile photo updated
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Main photo updated }
+                            data:
+                                $ref: "#/components/schemas/UserMedia"
+
+        MediaMarkFitnessResponse:
+            description: Fitness tag updated
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Fitness tag updated }
+                            data:
+                                $ref: "#/components/schemas/UserMedia"
+
+        MediaDeleteResponse:
+            description: Media deleted
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Media deleted }
+                            data:
+                                type: object
+                                properties:
+                                    deleted: { type: boolean, example: true }
+
+        ProgressListResponse:
+            description: List of progress captures
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Success }
+                            data:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/ProgressCapture"
+
+        ProgressUploadResponse:
+            description: Progress capture uploaded
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Progress uploaded }
+                            data:
+                                $ref: "#/components/schemas/ProgressCapture"
+
+        BadgeStatusResponse:
+            description: Active Fitness Verified badge state
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Success }
+                            data:
+                                type: object
+                                properties:
+                                    userId: { type: integer, example: 1 }
+                                    status: { type: string, enum: [active, inactive], example: active }
+                                    lastActivityAt: { type: string, format: date-time, example: "2026-04-20T08:15:00.000Z" }
+                                    lastUpdated: { type: string, format: date-time, example: "2026-04-22T10:30:00.000Z" }
+
+        ProgressDeleteResponse:
+            description: Progress capture deleted
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: true }
+                            message: { type: string, example: Progress capture deleted }
+                            data:
+                                type: object
+                                properties:
+                                    deleted: { type: boolean, example: true }
+
+        BadRequestError:
+            description: Bad request
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: false }
+                            message: { type: string, example: Invalid or expired OTP }
+                            errorCode: { type: string, example: OTP_INVALID }
+
+        UnauthorizedError:
+            description: Invalid credentials or expired session
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: false }
+                            message: { type: string, example: Invalid credentials }
+                            errorCode: { type: string, example: INVALID_CREDENTIALS }
+
+        ForbiddenError:
+            description: Access denied
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: false }
+                            message: { type: string, example: Email not verified. Please verify your email first. }
+                            errorCode: { type: string, example: EMAIL_NOT_VERIFIED }
+
+        NotFoundError:
+            description: Resource not found
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: false }
+                            message: { type: string, example: Profile not found }
+                            errorCode: { type: string, example: PROFILE_NOT_FOUND }
+
+        ConflictError:
+            description: Duplicate or conflict
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: false }
+                            message: { type: string, example: Email already registered }
+                            errorCode: { type: string, example: EMAIL_EXISTS }
+
+        ValidationError:
+            description: Validation failed (422)
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            success: { type: boolean, example: false }
+                            message: { type: string, example: At least 4 media items are required }
+                            errorCode: { type: string, example: MEDIA_COUNT_LOW }
+
+    schemas:
+        User:
+            type: object
+            properties:
+                id: { type: integer, example: 1 }
+                email: { type: string, example: john.doe@example.com }
+                isVerified: { type: boolean, example: true }
+                faceVerifiedStatus: { type: string, enum: [pending, approved, failed], example: approved }
+                accountStatus: { type: string, enum: [pending, active, flagged, banned, inactive], example: active }
+                role: { type: string, example: user }
+                lastLoginAt: { type: string, format: date-time, example: "2026-04-22T10:30:00.000Z" }
+
+        Profile:
+            type: object
+            properties:
+                id: { type: integer, example: 1 }
+                userId: { type: integer, example: 1 }
+                fullName: { type: string, example: John Doe }
+                bio: { type: string, example: "Powerlifter. 5am gym. Chasing a 500lb deadlift." }
+                gender: { type: string, enum: [male, female, non_binary, other], example: male }
+                birthdate: { type: string, format: date, example: "1995-06-15" }
+                heightCm: { type: integer, example: 180 }
+                distancePrefKm: { type: integer, example: 50 }
+                mainProfilePhotoId: { type: integer, example: 3 }
+                profileStatus: { type: string, enum: [pending, active, suspended], example: active }
+                activatedAt: { type: string, format: date-time, example: "2026-04-22T10:30:00.000Z" }
+                fitness:
+                    type: object
+                    properties:
+                        workoutTypes:
+                            type: array
+                            items: { type: string }
+                            example: [weightlifting, cardio]
+                        workoutFrequency: { type: string, example: 5x_per_week }
+                        fitnessGoals:
+                            type: array
+                            items: { type: string }
+                            example: [build_muscle, stay_active]
+                        trainingStyles:
+                            type: array
+                            items: { type: string }
+                            example: [strength_training, bodybuilding]
+                        dietStyle: { type: string, example: high_protein }
+                        intent: { type: string, enum: [training_partner, connection, both], example: both }
+                        stylePreference: { type: string, enum: [same, different, no_preference], example: same }
+                lifestyle:
+                    type: object
+                    properties:
+                        smoking: { type: string, example: no }
+                        drinking: { type: string, example: sometimes }
+                        kids: { type: string, example: want }
+                        language: { type: string, example: "English, Hindi" }
+                        lookingFor: { type: string, example: Serious gym partner who can also be a real connection. }
+                media:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/UserMedia"
+                badge:
+                    type: object
+                    properties:
+                        status: { type: string, example: active }
+                        lastActivityAt: { type: string, format: date-time, example: "2026-04-20T08:15:00.000Z" }
+                distanceKm: { type: integer, nullable: true, example: 6 }
+
+        UserMedia:
+            type: object
+            properties:
+                id: { type: integer, example: 12 }
+                userId: { type: integer, example: 1 }
+                url: { type: string, example: "http://localhost:2003/uploads/users/1/1720000000000_abc123.webp" }
+                type: { type: string, enum: [photo, video], example: photo }
+                durationSec: { type: number, nullable: true, example: null }
+                isFitness: { type: boolean, example: true }
+                isMainPhoto: { type: boolean, example: false }
+                orderIndex: { type: integer, example: 1 }
+                source: { type: string, enum: [app_internal_camera, camera_roll], example: camera_roll }
+                mimeType: { type: string, example: image/webp }
+                sizeBytes: { type: integer, example: 184203 }
+
+        ProgressCapture:
+            type: object
+            properties:
+                id: { type: integer, example: 7 }
+                userId: { type: integer, example: 1 }
+                mediaUrl: { type: string, example: "http://localhost:2003/uploads/progress/1/1720000000000_pr.webp" }
+                type: { type: string, enum: [photo, video], example: video }
+                durationSec: { type: number, example: 6.5 }
+                capturedMonth: { type: integer, example: 4 }
+                capturedYear: { type: integer, example: 2026 }
+                workoutType: { type: string, example: weightlifting }
+                caption: { type: string, example: 405lb deadlift PR }
+                source: { type: string, example: app_internal_camera }
+                isRawVerified: { type: boolean, example: true }
+                createdAt: { type: string, format: date-time, example: "2026-04-22T10:30:00.000Z" }
+
+paths:
+    /auth/signup:
+        post:
+            summary: Create a new account (emails a 6-digit OTP)
+            tags: [Auth]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email, password]
+                            properties:
+                                email:
+                                    type: string
+                                    format: email
+                                    example: john.doe@example.com
+                                password:
+                                    type: string
+                                    minLength: 8
+                                    example: StrongPass@123
+            responses:
+                "201":
+                    $ref: "#/components/responses/SignupResponse"
+                "409":
+                    $ref: "#/components/responses/ConflictError"
+                "422":
+                    $ref: "#/components/responses/ValidationError"
+
+    /auth/verifyotp:
+        post:
+            summary: Verify OTP (registration or forgot-password)
+            description: |
+                Unified OTP verification endpoint. Pass `type`:
+                - `1` — Registration OTP (marks email as verified, activates account)
+                - `2` — Forgot Password OTP (marks user as forgot-password-verified, allowing /auth/resetpassword)
+            tags: [Auth]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email, otp, type]
+                            properties:
+                                email: { type: string, example: john.doe@example.com }
+                                otp: { type: string, example: "482917" }
+                                type:
+                                    type: integer
+                                    enum: [1, 2]
+                                    description: "1 = Registration OTP, 2 = Forgot Password OTP"
+                                    example: 1
+            responses:
+                "200":
+                    $ref: "#/components/responses/VerifyEmailResponse"
+                "400":
+                    $ref: "#/components/responses/BadRequestError"
+                "404":
+                    $ref: "#/components/responses/NotFoundError"
+
+    /auth/login:
+        post:
+            summary: Log in with email and password
+            description: "Triggers face verification when account is flagged or logging in from a new device."
+            tags: [Auth]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email, password]
+                            properties:
+                                email: { type: string, example: john.doe@example.com }
+                                password: { type: string, example: StrongPass@123 }
+                                deviceId: { type: string, example: ios-iphone15-abc123def456 }
+            responses:
+                "200":
+                    $ref: "#/components/responses/LoginResponse"
+                "401":
+                    $ref: "#/components/responses/UnauthorizedError"
+                "403":
+                    $ref: "#/components/responses/ForbiddenError"
+
+    /auth/forgotpassword:
+        post:
+            summary: Request a password-reset OTP
+            tags: [Auth]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email]
+                            properties:
+                                email: { type: string, example: john.doe@example.com }
+            responses:
+                "200":
+                    $ref: "#/components/responses/ForgotPasswordResponse"
+
+    /auth/resetpassword:
+        post:
+            summary: Reset password (requires prior OTP verification via /auth/verifyotp with type=2)
+            description: |
+                Must be called AFTER `/auth/verifyotp` with `type: 2` for the same email.
+                Revokes all active sessions on success.
+                Returns 400 `FORGOT_PASSWORD_NOT_VERIFIED` if the OTP wasn't verified first.
+            tags: [Auth]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email, password, confirmPassword]
+                            properties:
+                                email: { type: string, example: john.doe@example.com }
+                                password: { type: string, example: NewStrongPass@456 }
+                                confirmPassword: { type: string, example: NewStrongPass@456 }
+            responses:
+                "200":
+                    $ref: "#/components/responses/ResetPasswordResponse"
+                "400":
+                    $ref: "#/components/responses/BadRequestError"
+
+    /auth/resendotp:
+        post:
+            summary: Resend OTP (registration or forgot-password)
+            description: |
+                Pass `type`:
+                - `1` — Registration OTP
+                - `2` — Forgot Password OTP
+            tags: [Auth]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email, type]
+                            properties:
+                                email: { type: string, example: john.doe@example.com }
+                                type:
+                                    type: integer
+                                    enum: [1, 2]
+                                    description: "1 = Registration OTP, 2 = Forgot Password OTP"
+                                    example: 1
+            responses:
+                "200":
+                    $ref: "#/components/responses/ResendOtpResponse"
+                "404":
+                    $ref: "#/components/responses/NotFoundError"
+
+    /auth/faceverify:
+        post:
+            summary: Submit a live face image for verification (3 failures flag the account)
+            tags: [Auth]
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [imageUrl]
+                            properties:
+                                imageUrl:
+                                    type: string
+                                    example: https://cdn.spotme.com/tmp/face_live_20260420.jpg
+            responses:
+                "200":
+                    $ref: "#/components/responses/FaceVerifyResponse"
+                "401":
+                    $ref: "#/components/responses/UnauthorizedError"
+                "403":
+                    $ref: "#/components/responses/ForbiddenError"
+
+    /auth/logout:
+        post:
+            summary: Log out the current session
+            tags: [Auth]
+            security:
+                - bearerAuth: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/LogoutResponse"
+
+    /auth/me:
+        get:
+            summary: Get the currently authenticated user summary
+            tags: [Auth]
+            security:
+                - bearerAuth: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/MeResponse"
+                "401":
+                    $ref: "#/components/responses/UnauthorizedError"
+
+    /profile/setupcomplete:
+        post:
+            summary: Consolidated onboarding - basic info + fitness + lifestyle + media
+            description: "Validates 4–6 media items, ≥1 fitness-tagged, exactly one main photo (clear face). On pass sets profileStatus=active."
+            tags: [Profile]
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [fullName, gender, birthdate, fitness, media]
+                            properties:
+                                fullName: { type: string, example: John Doe }
+                                bio: { type: string, example: "Powerlifter. 5am gym. Chasing a 500lb deadlift." }
+                                gender: { type: string, enum: [male, female, non_binary, other], example: male }
+                                birthdate: { type: string, format: date, example: "1995-06-15" }
+                                heightCm: { type: integer, example: 180 }
+                                latitude: { type: number, example: 19.0760 }
+                                longitude: { type: number, example: 72.8777 }
+                                distancePrefKm: { type: integer, example: 50 }
+                                fitness:
+                                    type: object
+                                    required: [workoutTypes, workoutFrequency, fitnessGoals, trainingStyles, intent]
+                                    properties:
+                                        workoutTypes:
+                                            type: array
+                                            items: { type: string }
+                                            example: [weightlifting, cardio]
+                                        workoutFrequency: { type: string, example: 5x_per_week }
+                                        fitnessGoals:
+                                            type: array
+                                            items: { type: string }
+                                            example: [build_muscle, stay_active]
+                                        trainingStyles:
+                                            type: array
+                                            items: { type: string }
+                                            example: [strength_training, bodybuilding]
+                                        dietStyle: { type: string, example: high_protein }
+                                        intent: { type: string, enum: [training_partner, connection, both], example: both }
+                                        stylePreference: { type: string, enum: [same, different, no_preference], example: same }
+                                lifestyle:
+                                    type: object
+                                    properties:
+                                        smoking: { type: string, example: no }
+                                        drinking: { type: string, example: sometimes }
+                                        kids: { type: string, example: want }
+                                        language: { type: string, example: "English, Hindi" }
+                                        lookingFor: { type: string, example: Serious gym partner who can also be a real connection. }
+                                media:
+                                    type: array
+                                    minItems: 4
+                                    maxItems: 6
+                                    example:
+                                        - url: /uploads/users/1/1720000000001_face.webp
+                                          type: photo
+                                          isFitness: false
+                                          isMainPhoto: true
+                                          source: camera_roll
+                                          orderIndex: 1
+                                        - url: /uploads/users/1/1720000000002_squat.webp
+                                          type: photo
+                                          isFitness: true
+                                          isMainPhoto: false
+                                          source: camera_roll
+                                          orderIndex: 2
+                                        - url: /uploads/users/1/1720000000003_lifestyle.webp
+                                          type: photo
+                                          isFitness: false
+                                          isMainPhoto: false
+                                          source: camera_roll
+                                          orderIndex: 3
+                                        - url: /uploads/users/1/1720000000004_pr.mp4
+                                          type: video
+                                          durationSec: 6
+                                          isFitness: true
+                                          isMainPhoto: false
+                                          source: camera_roll
+                                          orderIndex: 4
+                                    items:
+                                        type: object
+                                        properties:
+                                            url: { type: string }
+                                            type: { type: string, enum: [photo, video] }
+                                            isFitness: { type: boolean }
+                                            isMainPhoto: { type: boolean }
+                                            durationSec: { type: number }
+                                            source: { type: string, enum: [app_internal_camera, camera_roll] }
+                                            orderIndex: { type: integer }
+            responses:
+                "200":
+                    $ref: "#/components/responses/ProfileSetupCompleteResponse"
+                "422":
+                    $ref: "#/components/responses/ValidationError"
+
+    /profile/me:
+        get:
+            summary: Get my full profile (profile + fitness + lifestyle + media + badge)
+            tags: [Profile]
+            security:
+                - bearerAuth: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/ProfileMeResponse"
+                "404":
+                    $ref: "#/components/responses/NotFoundError"
+        put:
+            summary: Update basic profile fields
+            tags: [Profile]
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                fullName: { type: string, example: John D. }
+                                bio: { type: string, example: "Hybrid training — strength + conditioning." }
+                                heightCm: { type: integer, example: 181 }
+                                distancePrefKm: { type: integer, example: 40 }
+            responses:
+                "200":
+                    $ref: "#/components/responses/ProfileUpdateResponse"
+
+    /profile/fitness:
+        put:
+            summary: Update fitness identity
+            tags: [Profile]
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                workoutTypes:
+                                    type: array
+                                    items: { type: string }
+                                    example: [weightlifting, hiit]
+                                workoutFrequency: { type: string, example: 6x_per_week }
+                                fitnessGoals:
+                                    type: array
+                                    items: { type: string }
+                                    example: [build_muscle, improve_endurance]
+                                trainingStyles:
+                                    type: array
+                                    items: { type: string }
+                                    example: [powerlifting, hybrid_training]
+                                dietStyle: { type: string, example: high_protein }
+                                intent: { type: string, example: training_partner }
+                                stylePreference: { type: string, example: same }
+            responses:
+                "200":
+                    $ref: "#/components/responses/FitnessUpdateResponse"
+
+    /profile/lifestyle:
+        put:
+            summary: Update lifestyle
+            tags: [Profile]
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                smoking: { type: string, example: no }
+                                drinking: { type: string, example: sometimes }
+                                kids: { type: string, example: want }
+                                language: { type: string, example: "English, Hindi, Gujarati" }
+                                lookingFor: { type: string, example: A training partner and maybe more. }
+            responses:
+                "200":
+                    $ref: "#/components/responses/LifestyleUpdateResponse"
+
+    /profile/location:
+        put:
+            summary: Update raw coordinates (discovery exposes only distance)
+            tags: [Profile]
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [latitude, longitude]
+                            properties:
+                                latitude: { type: number, example: 19.0760 }
+                                longitude: { type: number, example: 72.8777 }
+            responses:
+                "200":
+                    $ref: "#/components/responses/LocationUpdateResponse"
+
+    /profile/{userId}:
+        get:
+            summary: Get another user's public profile (active profiles only)
+            tags: [Profile]
+            security:
+                - bearerAuth: []
+            parameters:
+                - in: path
+                  name: userId
+                  required: true
+                  schema: { type: integer }
+                  example: 2
+            responses:
+                "200":
+                    $ref: "#/components/responses/PublicProfileResponse"
+                "404":
+                    $ref: "#/components/responses/NotFoundError"
+
+    /media:
+        get:
+            summary: List my media (ordered by orderIndex)
+            tags: [Media]
+            security:
+                - bearerAuth: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/MediaListResponse"
+
+    /media/upload:
+        post:
+            summary: Upload a single photo or video (WebP pipeline, 7s video cap, 6-item cap)
+            tags: [Media]
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    multipart/form-data:
+                        schema:
+                            type: object
+                            required: [file]
+                            properties:
+                                file: { type: string, format: binary }
+                                source: { type: string, enum: [app_internal_camera, camera_roll], example: camera_roll }
+                                isFitness: { type: boolean, example: true }
+            responses:
+                "201":
+                    $ref: "#/components/responses/MediaUploadResponse"
+                "400":
+                    $ref: "#/components/responses/BadRequestError"
+                "409":
+                    $ref: "#/components/responses/ConflictError"
+                "422":
+                    $ref: "#/components/responses/ValidationError"
+
+    /media/reorder:
+        put:
+            summary: Reorder my media
+            tags: [Media]
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [items]
+                            properties:
+                                items:
+                                    type: array
+                                    example:
+                                        - { id: 3, orderIndex: 1 }
+                                        - { id: 4, orderIndex: 2 }
+                                        - { id: 12, orderIndex: 3 }
+                                        - { id: 13, orderIndex: 4 }
+                                    items:
+                                        type: object
+                                        properties:
+                                            id: { type: integer }
+                                            orderIndex: { type: integer }
+            responses:
+                "200":
+                    $ref: "#/components/responses/MediaReorderResponse"
+
+    /media/{id}/setmain:
+        put:
+            summary: Set a media item as main profile photo (must be a photo with a clear face)
+            tags: [Media]
+            security:
+                - bearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema: { type: integer }
+                  example: 3
+            responses:
+                "200":
+                    $ref: "#/components/responses/MediaSetMainResponse"
+                "404":
+                    $ref: "#/components/responses/NotFoundError"
+                "422":
+                    $ref: "#/components/responses/ValidationError"
+
+    /media/{id}/markfitness:
+        put:
+            summary: Toggle the fitness tag on a media item
+            tags: [Media]
+            security:
+                - bearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema: { type: integer }
+                  example: 4
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [isFitness]
+                            properties:
+                                isFitness: { type: boolean, example: true }
+            responses:
+                "200":
+                    $ref: "#/components/responses/MediaMarkFitnessResponse"
+
+    /media/{id}:
+        delete:
+            summary: Delete a media item (may revert profile to pending)
+            tags: [Media]
+            security:
+                - bearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema: { type: integer }
+                  example: 12
+            responses:
+                "200":
+                    $ref: "#/components/responses/MediaDeleteResponse"
+                "404":
+                    $ref: "#/components/responses/NotFoundError"
+
+    /progress/me:
+        get:
+            summary: List my own progress captures (newest first)
+            tags: [Progress]
+            security:
+                - bearerAuth: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/ProgressListResponse"
+
+    /progress/upload:
+        post:
+            summary: Upload a live in-app progress capture (3–10s video, camera-roll rejected)
+            tags: [Progress]
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    multipart/form-data:
+                        schema:
+                            type: object
+                            required: [file, source]
+                            properties:
+                                file: { type: string, format: binary }
+                                source:
+                                    type: string
+                                    enum: [app_internal_camera]
+                                    example: app_internal_camera
+                                workoutType: { type: string, example: weightlifting }
+                                caption: { type: string, example: 405lb deadlift PR }
+            responses:
+                "201":
+                    $ref: "#/components/responses/ProgressUploadResponse"
+                "400":
+                    $ref: "#/components/responses/BadRequestError"
+                "422":
+                    $ref: "#/components/responses/ValidationError"
+
+    /progress/badgestatus:
+        get:
+            summary: Get my Active Fitness Verified badge state
+            tags: [Progress]
+            security:
+                - bearerAuth: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/BadgeStatusResponse"
+
+    /progress/user/{userId}:
+        get:
+            summary: View another user's progress captures
+            tags: [Progress]
+            security:
+                - bearerAuth: []
+            parameters:
+                - in: path
+                  name: userId
+                  required: true
+                  schema: { type: integer }
+                  example: 2
+            responses:
+                "200":
+                    $ref: "#/components/responses/ProgressListResponse"
+
+    /progress/{id}:
+        delete:
+            summary: Delete one of my progress captures (triggers badge recompute)
+            tags: [Progress]
+            security:
+                - bearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema: { type: integer }
+                  example: 7
+            responses:
+                "200":
+                    $ref: "#/components/responses/ProgressDeleteResponse"
+                "404":
+                    $ref: "#/components/responses/NotFoundError"

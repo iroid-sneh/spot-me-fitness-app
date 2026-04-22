@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.local
+.env.production
+uploads/users/
+uploads/progress/
+!uploads/.gitkeep
+*.log
+.DS_Store
+.idea/
+.vscode/
+dist/
+src/fcm/firebase-adminsdk.json

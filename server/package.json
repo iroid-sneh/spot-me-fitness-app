@@ -1,0 +1,51 @@
+{
+  "name": "spot-me-backend",
+  "version": "1.0.0",
+  "description": "Spot Me - Fitness Connection App Backend",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node -r dotenv/config -r @babel/register app.js",
+    "dev": "nodemon -r dotenv/config -r @babel/register app.js",
+    "seed": "node -r dotenv/config -r @babel/register seeder/index.js"
+  },
+  "keywords": [
+    "fitness",
+    "dating",
+    "connection",
+    "spot-me"
+  ],
+  "author": "iRoid Solutions",
+  "license": "ISC",
+  "dependencies": {
+    "argon2": "^0.31.2",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "express-async-wrapper": "^0.1.0",
+    "express-joi-validation": "^5.0.1",
+    "express-rate-limit": "^7.1.5",
+    "firebase-admin": "^12.0.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "helmet": "^7.1.0",
+    "joi": "^17.12.0",
+    "jsonwebtoken": "^9.0.2",
+    "moment": "^2.30.1",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.9.0",
+    "nodemailer": "^6.9.8",
+    "sequelize": "^6.35.2",
+    "sharp": "^0.33.2",
+    "socket.io": "^4.7.4",
+    "swagger-ui-express": "^5.0.0",
+    "uuid": "^9.0.1",
+    "yamljs": "^0.3.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.7",
+    "@babel/preset-env": "^7.23.7",
+    "@babel/register": "^7.23.7",
+    "nodemon": "^3.0.3"
+  }
+}
