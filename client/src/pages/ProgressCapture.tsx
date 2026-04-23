@@ -1,89 +1,73 @@
-import React, { useState } from 'react';
-interface ProgressItem {
-  id: string;
+import React, { useEffect, useState } from 'react';
+import { CheckIcon, XIcon } from 'lucide-react';
+import { apiRequest } from '../lib/api';
+import { useAdminAuth } from '../context/AdminAuthContext';
+
+type ProgressItem = {
+  id: number;
   userName: string;
   avatar: string;
-  thumbnail: string;
+  thumbnail: string | null;
   timestamp: string;
-  workoutType: string;
+  workoutType: string | null;
   badgeGranted: boolean;
-}
-const mockProgress: ProgressItem[] = [
-{
-  id: '1',
-  userName: 'Sarah Johnson',
-  avatar: 'SJ',
-  thumbnail:
-  'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400',
-  timestamp: 'March 2024',
-  workoutType: 'Strength Training',
-  badgeGranted: true
-},
-{
-  id: '2',
-  userName: 'Mike Chen',
-  avatar: 'MC',
-  thumbnail:
-  'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400',
-  timestamp: 'March 2024',
-  workoutType: 'Bodybuilding',
-  badgeGranted: true
-},
-{
-  id: '3',
-  userName: 'Emma Davis',
-  avatar: 'ED',
-  thumbnail:
-  'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400',
-  timestamp: 'February 2024',
-  workoutType: 'Cardio',
-  badgeGranted: false
-},
-{
-  id: '4',
-  userName: 'James Wilson',
-  avatar: 'JW',
-  thumbnail:
-  'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400',
-  timestamp: 'March 2024',
-  workoutType: 'CrossFit',
-  badgeGranted: true
-},
-{
-  id: '5',
-  userName: 'Lisa Anderson',
-  avatar: 'LA',
-  thumbnail:
-  'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400',
-  timestamp: 'February 2024',
-  workoutType: 'Yoga',
-  badgeGranted: false
-},
-{
-  id: '6',
-  userName: 'David Martinez',
-  avatar: 'DM',
-  thumbnail:
-  'https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=400',
-  timestamp: 'March 2024',
-  workoutType: 'HIIT',
-  badgeGranted: true
-}];
+  status: string;
+  caption: string | null;
+  rawVerified: boolean;
+};
+
+type ProgressResponse = {
+  data: {
+    items: ProgressItem[];
+  };
+};
 
 export function ProgressCapture() {
-  const [items, setItems] = useState(mockProgress);
-  const toggleBadge = (id: string) => {
-    setItems(
-      items.map((item) =>
-      item.id === id ?
-      {
-        ...item,
-        badgeGranted: !item.badgeGranted
-      } :
-      item
-      )
-    );
+  const { token } = useAdminAuth();
+  const [items, setItems] = useState<ProgressItem[]>([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [actionId, setActionId] = useState<number | null>(null);
+
+  const loadProgress = async () => {
+    if (!token) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await apiRequest<ProgressResponse>('/admin/progress/reviews', { token });
+      setItems(response.data.items);
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load progress captures');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    loadProgress();
+  }, [token]);
+
+  const runAction = async (id: number, action: 'approve' | 'reject') => {
+    if (!token) {
+      return;
+    }
+    setActionId(id);
+    try {
+      await apiRequest(`/admin/progress/${id}/${action}`, {
+        method: 'POST',
+        token,
+        body: { note: `${action}d in admin review` },
+      });
+      await loadProgress();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to ${action} progress capture`);
+    } finally {
+      setActionId(null);
+    }
+  };
+
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -91,53 +75,64 @@ export function ProgressCapture() {
           Progress Capture Review
         </h1>
         <p className="text-gray-600 mt-1">
-          Review in-app only captures and grant Active Fitness Verified Badge
+          Review in-app only captures and validate badge-eligible activity
         </p>
       </div>
 
+      {error ? <div className="mb-6 rounded-xl bg-rose-50 text-rose-700 px-4 py-3">{error}</div> : null}
+
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="space-y-4">
+          {loading ? <div className="text-gray-500">Loading progress captures...</div> : null}
+          {!loading && items.length === 0 ? <div className="text-gray-500">No progress captures available.</div> : null}
           {items.map((item) =>
-          <div
-            key={item.id}
-            className="flex items-center gap-6 p-4 border border-gray-200 rounded-lg hover:border-primary/50 transition-colors">
-            
+            <div
+              key={item.id}
+              className="flex flex-col xl:flex-row xl:items-center gap-6 p-4 border border-gray-200 rounded-lg hover:border-primary/50 transition-colors">
               <div className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-lg">
                 {item.avatar}
               </div>
 
               <div className="flex-1">
-                <div className="font-semibold text-gray-900">
-                  {item.userName}
-                </div>
+                <div className="font-semibold text-gray-900">{item.userName}</div>
                 <div className="text-sm text-gray-600">{item.timestamp}</div>
+                <div className="text-sm text-gray-500 mt-1">{item.caption || 'No caption'}</div>
               </div>
 
               <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100">
-                <img
-                src={item.thumbnail}
-                alt="Progress capture"
-                className="w-full h-full object-cover" />
-              
+                {item.thumbnail ? (
+                  <img
+                    src={item.thumbnail}
+                    alt="Progress capture"
+                    className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">No preview</div>
+                )}
               </div>
 
-              <div className="w-40">
+              <div className="w-48">
                 <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                  {item.workoutType}
+                  {item.workoutType || 'Unknown workout'}
                 </span>
+                <div className="text-xs text-gray-500 mt-3">
+                  Review: {item.status} | Badge: {item.badgeGranted ? 'active' : 'inactive'} | Raw verified: {item.rawVerified ? 'yes' : 'no'}
+                </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-700 font-medium">
-                  Active Fitness Badge
-                </span>
+              <div className="flex gap-3">
                 <button
-                onClick={() => toggleBadge(item.id)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${item.badgeGranted ? 'bg-primary' : 'bg-gray-300'}`}>
-                
-                  <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${item.badgeGranted ? 'translate-x-6' : 'translate-x-1'}`} />
-                
+                  onClick={() => runAction(item.id, 'approve')}
+                  disabled={actionId === item.id}
+                  className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-3 text-white font-semibold hover:bg-green-600 disabled:opacity-60">
+                  <CheckIcon size={18} />
+                  Approve
+                </button>
+                <button
+                  onClick={() => runAction(item.id, 'reject')}
+                  disabled={actionId === item.id}
+                  className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-3 text-white font-semibold hover:bg-red-600 disabled:opacity-60">
+                  <XIcon size={18} />
+                  Reject
                 </button>
               </div>
             </div>
@@ -145,5 +140,4 @@ export function ProgressCapture() {
         </div>
       </div>
     </div>);
-
 }

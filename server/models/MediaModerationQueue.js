@@ -1,53 +1,45 @@
 import { DataTypes } from "sequelize";
 import sequelize from "./connection.js";
 
-const FaceVerificationLog = sequelize.define(
-    "FaceVerificationLog",
+const MediaModerationQueue = sequelize.define(
+    "MediaModerationQueue",
     {
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true,
         },
+        media_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+        progress_capture_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
         user_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        attempt_image_url: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-        },
-        matched_against_media_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
-        result: {
-            type: DataTypes.STRING(20),
+        source_type: {
+            type: DataTypes.STRING(30),
             allowNull: false,
         },
-        confidence: {
-            type: DataTypes.DECIMAL(5, 4),
-            allowNull: true,
-        },
-        attempt_count: {
-            type: DataTypes.INTEGER,
+        flagged_by: {
+            type: DataTypes.STRING(30),
             allowNull: false,
-            defaultValue: 1,
+            defaultValue: "system",
         },
-        provider: {
-            type: DataTypes.STRING(50),
+        ai_score: {
+            type: DataTypes.JSON,
             allowNull: true,
         },
-        reason: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-        },
-        admin_review_status: {
+        status: {
             type: DataTypes.STRING(20),
             allowNull: false,
             defaultValue: "pending",
         },
-        admin_review_note: {
+        reviewer_note: {
             type: DataTypes.TEXT,
             allowNull: true,
         },
@@ -57,10 +49,10 @@ const FaceVerificationLog = sequelize.define(
         },
     },
     {
-        tableName: "face_verification_logs",
+        tableName: "media_moderation_queue",
         timestamps: true,
-        indexes: [{ fields: ["user_id"] }],
+        indexes: [{ fields: ["status"] }, { fields: ["user_id"] }],
     }
 );
 
-export default FaceVerificationLog;
+export default MediaModerationQueue;

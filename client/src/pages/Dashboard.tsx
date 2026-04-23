@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   LineChart,
   Line,
@@ -17,98 +17,64 @@ import {
   AlertCircleIcon,
   HeartIcon } from
 'lucide-react';
-const userGrowthData = [
-{
-  month: 'Jan',
-  users: 18500
-},
-{
-  month: 'Feb',
-  users: 19800
-},
-{
-  month: 'Mar',
-  users: 21200
-},
-{
-  month: 'Apr',
-  users: 22800
-},
-{
-  month: 'May',
-  users: 23900
-},
-{
-  month: 'Jun',
-  users: 24580
-}];
+import { apiRequest } from '../lib/api';
+import { useAdminAuth } from '../context/AdminAuthContext';
 
-const premiumFeaturesData = [
-{
-  feature: 'Rewind',
-  count: 4200
-},
-{
-  feature: 'Profile Boost',
-  count: 3800
-},
-{
-  feature: 'Unlock Prompt',
-  count: 3200
-},
-{
-  feature: 'Super Like',
-  count: 5100
-},
-{
-  feature: 'Priority Queue',
-  count: 2900
-}];
+type DashboardResponse = {
+  data: {
+    stats: { label: string; value: string | number; change: string; positive: boolean }[];
+    userGrowth: { month: string; users: number }[];
+    premiumFeatures: { feature: string; count: number }[];
+    queues: {
+      pendingVerifications: number;
+      pendingMediaReviews: number;
+      pendingReports: number;
+      pendingProgressReviews: number;
+    };
+    health: {
+      verifiedUsers: number;
+      totalUsers: number;
+    };
+  };
+};
 
-const stats = [
-{
-  label: 'Total Users',
-  value: '24,580',
-  change: '+12.5%',
-  icon: UsersIcon,
-  positive: true
-},
-{
-  label: 'Active Now',
-  value: '1,247',
-  change: '+8.2%',
-  icon: TrendingUpIcon,
-  positive: true
-},
-{
-  label: 'Premium Conversions',
-  value: '18.4%',
-  change: '+3.1%',
-  icon: CreditCardIcon,
-  positive: true
-},
-{
-  label: 'Reports Pending',
-  value: '23',
-  change: '-15%',
-  icon: AlertCircleIcon,
-  positive: true
-}];
+const icons = [UsersIcon, TrendingUpIcon, CreditCardIcon, AlertCircleIcon];
 
 export function Dashboard() {
+  const { token } = useAdminAuth();
+  const [data, setData] = useState<DashboardResponse['data'] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    apiRequest<DashboardResponse>('/admin/dashboard/overview', { token })
+      .then((response) => setData(response.data))
+      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load dashboard'))
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const compatibility = data?.health.totalUsers
+    ? Math.round((data.health.verifiedUsers / data.health.totalUsers) * 100)
+    : 0;
+
   return (
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600 mt-1">
-          Navigate through interactive dashboards to uncover trends and optimize
-          operations.
+          Live admin overview connected to backend metrics, moderation queues, and purchase data.
         </p>
       </div>
 
+      {error ? <div className="mb-6 rounded-xl bg-rose-50 text-rose-700 px-4 py-3">{error}</div> : null}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
+        {(data?.stats || []).map((stat, index) => {
+          const Icon = icons[index] || UsersIcon;
           return (
             <div key={stat.label} className="bg-white rounded-xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
@@ -117,16 +83,15 @@ export function Dashboard() {
                 </div>
                 <span
                   className={`text-sm font-medium ${stat.positive ? 'text-green-600' : 'text-red-600'}`}>
-                  
                   {stat.change}
                 </span>
               </div>
               <div className="text-2xl font-bold text-gray-900">
-                {stat.value}
+                {loading ? '...' : stat.value}
               </div>
               <div className="text-sm text-gray-600 mt-1">{stat.label}</div>
-            </div>);
-
+            </div>
+          );
         })}
       </div>
 
@@ -134,7 +99,7 @@ export function Dashboard() {
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <h2 className="text-lg font-bold text-gray-900 mb-6">User Growth</h2>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={userGrowthData}>
+            <LineChart data={data?.userGrowth || []}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="month" stroke="#9ca3af" />
               <YAxis stroke="#9ca3af" />
@@ -148,7 +113,6 @@ export function Dashboard() {
                   fill: '#25c5a5',
                   r: 4
                 }} />
-              
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -158,7 +122,7 @@ export function Dashboard() {
             Most Used Premium Features
           </h2>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={premiumFeaturesData}>
+            <BarChart data={data?.premiumFeatures || []}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="feature" stroke="#9ca3af" />
               <YAxis stroke="#9ca3af" />
@@ -169,22 +133,45 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-            <HeartIcon className="text-primary" size={32} />
-          </div>
-          <div>
-            <div className="text-sm text-gray-600">
-              Average Compatibility Score
+      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+              <HeartIcon className="text-primary" size={32} />
             </div>
-            <div className="text-4xl font-bold text-gray-900">72%</div>
-            <div className="text-sm text-green-600 font-medium">
-              +5% from last month
+            <div>
+              <div className="text-sm text-gray-600">
+                Verified User Ratio
+              </div>
+              <div className="text-4xl font-bold text-gray-900">{compatibility}%</div>
+              <div className="text-sm text-green-600 font-medium">
+                based on total vs verified users
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Pending Queues</h2>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Verification reviews</span>
+              <span className="font-semibold text-gray-900">{data?.queues.pendingVerifications || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Media moderation</span>
+              <span className="font-semibold text-gray-900">{data?.queues.pendingMediaReviews || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Reports</span>
+              <span className="font-semibold text-gray-900">{data?.queues.pendingReports || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Progress reviews</span>
+              <span className="font-semibold text-gray-900">{data?.queues.pendingProgressReviews || 0}</span>
             </div>
           </div>
         </div>
       </div>
     </div>);
-
 }

@@ -57,6 +57,19 @@ const UserMedia = sequelize.define(
             type: DataTypes.BOOLEAN,
             allowNull: true,
         },
+        moderation_status: {
+            type: DataTypes.STRING(20),
+            allowNull: false,
+            defaultValue: "pending",
+        },
+        moderation_reason: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        ai_score: {
+            type: DataTypes.JSON,
+            allowNull: true,
+        },
     },
     {
         tableName: "user_media",

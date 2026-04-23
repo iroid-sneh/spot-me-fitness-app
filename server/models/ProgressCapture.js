@@ -58,6 +58,15 @@ const ProgressCapture = sequelize.define(
             type: DataTypes.INTEGER,
             allowNull: true,
         },
+        review_status: {
+            type: DataTypes.STRING(20),
+            allowNull: false,
+            defaultValue: "pending",
+        },
+        review_note: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
     },
     {
         tableName: "progress_captures",
